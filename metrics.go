@@ -3,7 +3,7 @@
 // <https://github.com/rcrowley/go-metrics>
 //
 // Coda Hale's original work: <https://github.com/codahale/metrics>
-package metrics
+package timemetrics
 
 // UseNilMetrics is checked by the constructor functions for all of the
 // standard metrics.  If it is true, the metric returned is a stub.

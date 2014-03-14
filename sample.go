@@ -1,4 +1,4 @@
-package metrics
+package timemetrics
 
 import (
 	"container/heap"
