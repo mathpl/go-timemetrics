@@ -10,9 +10,9 @@ type Meter interface {
 	Count() int64
 	Mark(time.Time, int64)
 	CrunchEWMA(time.Time, int)
-	Rate1() int64
-	Rate5() int64
-	Rate15() int64
+	Rate1() float64
+	Rate5() float64
+	Rate15() float64
 	Snapshot() Meter
 	GetMaxTime() time.Time
 	GetMaxEWMATime() time.Time
@@ -44,7 +44,7 @@ func NewMeter(t time.Time, interval int) Meter {
 // MeterSnapshot is a read-only copy of another Meter.
 type MeterSnapshot struct {
 	count                int64
-	rate1, rate5, rate15 int64
+	rate1, rate5, rate15 float64
 	lastUpdate           time.Time
 	lastEWMAUpdate       time.Time
 }
@@ -63,15 +63,15 @@ func (*MeterSnapshot) CrunchEWMA(time.Time, int) {
 
 // Rate1 returns the one-minute moving average rate of events per second at the
 // time the snapshot was taken.
-func (m *MeterSnapshot) Rate1() int64 { return m.rate1 }
+func (m *MeterSnapshot) Rate1() float64 { return m.rate1 }
 
 // Rate5 returns the five-minute moving average rate of events per second at
 // the time the snapshot was taken.
-func (m *MeterSnapshot) Rate5() int64 { return m.rate5 }
+func (m *MeterSnapshot) Rate5() float64 { return m.rate5 }
 
 // Rate15 returns the fifteen-minute moving average rate of events per second
 // at the time the snapshot was taken.
-func (m *MeterSnapshot) Rate15() int64 { return m.rate15 }
+func (m *MeterSnapshot) Rate15() float64 { return m.rate15 }
 
 // Snapshot returns the snapshot.
 func (m *MeterSnapshot) Snapshot() Meter { return m }
@@ -92,13 +92,13 @@ func (NilMeter) Mark(t time.Time, n int64) {}
 func (NilMeter) CrunchEWMA(time.Time, int) {}
 
 // Rate1 is a no-op.
-func (NilMeter) Rate1() int64 { return 0 }
+func (NilMeter) Rate1() float64 { return 0 }
 
 // Rate5 is a no-op.
-func (NilMeter) Rate5() int64 { return 0 }
+func (NilMeter) Rate5() float64 { return 0 }
 
 // Rate15is a no-op.
-func (NilMeter) Rate15() int64 { return 0 }
+func (NilMeter) Rate15() float64 { return 0 }
 
 // Snapshot is a no-op.
 func (NilMeter) Snapshot() Meter { return NilMeter{} }
@@ -134,18 +134,18 @@ func (m *StandardMeter) Mark(t time.Time, n int64) {
 	m.lastUpdate = t
 }
 
-// Rate1 returns the one-minute moving average rate of events per second.
-func (m *StandardMeter) Rate1() int64 {
+// Rate1 returns the one-minute moving average rate of events per minute.
+func (m *StandardMeter) Rate1() float64 {
 	return m.a1.Rate()
 }
 
-// Rate5 returns the five-minute moving average rate of events per second.
-func (m *StandardMeter) Rate5() int64 {
+// Rate5 returns the five-minute moving average rate of events per minute.
+func (m *StandardMeter) Rate5() float64 {
 	return m.a5.Rate()
 }
 
-// Rate15 returns the fifteen-minute moving average rate of events per second.
-func (m *StandardMeter) Rate15() int64 {
+// Rate15 returns the fifteen-minute moving average rate of events per minute.
+func (m *StandardMeter) Rate15() float64 {
 	return m.a15.Rate()
 }
 

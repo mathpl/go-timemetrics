@@ -1,6 +1,7 @@
 package timemetrics
 
 import (
+	//"fmt"
 	"math"
 	"time"
 )
@@ -8,7 +9,7 @@ import (
 // EWMAs continuously calculate an exponentially-weighted moving average
 // based on an outside source of clock ticks.
 type EWMA interface {
-	Rate() int64
+	Rate() float64
 	Snapshot() EWMA
 	Tick(time.Time)
 	Update(int64)
@@ -38,11 +39,11 @@ func NewEWMA15(t time.Time, interval int) EWMA {
 }
 
 // EWMASnapshot is a read-only copy of another EWMA.
-type EWMASnapshot int64
+type EWMASnapshot float64
 
 // Rate returns the rate of events per second at the time the snapshot was
 // taken.
-func (a EWMASnapshot) Rate() int64 { return int64(a * 1000) }
+func (a EWMASnapshot) Rate() float64 { return float64(a) }
 
 // Snapshot returns the snapshot.
 func (a EWMASnapshot) Snapshot() EWMA { return a }
@@ -61,7 +62,7 @@ func (EWMASnapshot) Update(int64) {
 type NilEWMA struct{}
 
 // Rate is a no-op.
-func (NilEWMA) Rate() int64 { return 0 }
+func (NilEWMA) Rate() float64 { return 0.0 }
 
 // Snapshot is a no-op.
 func (NilEWMA) Snapshot() EWMA { return NilEWMA{} }
@@ -83,9 +84,9 @@ type StandardEWMA struct {
 	lastUpdate time.Time
 }
 
-// Rate returns the moving average rate of events per second.
-func (a *StandardEWMA) Rate() int64 {
-	return int64(a.rate)
+// Rate returns the moving average rate of events per minute.
+func (a *StandardEWMA) Rate() float64 {
+	return a.rate
 }
 
 // Snapshot returns a read-only copy of the EWMA.
