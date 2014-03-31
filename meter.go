@@ -23,15 +23,14 @@ type timeValueTuple struct {
 }
 
 // NewMeter constructs a new StandardMeter and launches a goroutine.
-func NewMeter(t time.Time, interval int) Meter {
+func NewMeter(t time.Time) Meter {
 	m := &StandardMeter{
 		0,
-		NewEWMA1(t, interval),
-		NewEWMA5(t, interval),
-		NewEWMA15(t, interval),
+		NewEWMA1(t),
+		NewEWMA5(t),
+		NewEWMA15(t),
 		t,
 		t,
-		interval,
 	}
 
 	return m
@@ -46,7 +45,6 @@ type StandardMeter struct {
 	a15            EWMA
 	lastUpdate     time.Time
 	lastEWMAUpdate time.Time
-	interval       int
 }
 
 // Count returns the number of events recorded.
@@ -88,13 +86,11 @@ func (m *StandardMeter) GetMaxEWMATime() time.Time {
 }
 
 func (m *StandardMeter) CrunchEWMA(t time.Time) {
-	if t.Unix() > m.lastEWMAUpdate.Unix() {
-		m.a1.Tick(t)
-		m.a5.Tick(t)
-		m.a15.Tick(t)
+	m.a1.Tick(t)
+	m.a5.Tick(t)
+	m.a15.Tick(t)
 
-		m.lastEWMAUpdate = t
-	}
+	m.lastEWMAUpdate = t
 }
 
 // arbiter receives inputs and sends outputs.  It counts each input and updates
