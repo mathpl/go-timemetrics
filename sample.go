@@ -21,12 +21,12 @@ type Sample interface {
 	Percentile(float64) float64
 	Percentiles([]float64) []float64
 	Size() int
-	Snapshot() Sample
 	StdDev() float64
 	Sum() int64
 	Update(time.Time, int64)
 	Values() []int64
 	Variance() float64
+	GetWindow() time.Duration
 }
 
 // ExpDecaySample is an exponentially-decaying sample using a forward-decaying
@@ -46,9 +46,6 @@ type ExpDecaySample struct {
 // NewExpDecaySample constructs a new exponentially-decaying sample with the
 // given reservoir size and alpha.
 func NewExpDecaySample(t time.Time, reservoirSize int, alpha float64, rescaleThresholdMin int) Sample {
-	if UseNilMetrics {
-		return NilSample{}
-	}
 	s := &ExpDecaySample{
 		alpha:            alpha,
 		reservoirSize:    reservoirSize,
@@ -107,18 +104,6 @@ func (s *ExpDecaySample) Size() int {
 	return len(s.values)
 }
 
-// Snapshot returns a read-only copy of the sample.
-func (s *ExpDecaySample) Snapshot() Sample {
-	values := make([]int64, len(s.values))
-	for i, v := range s.values {
-		values[i] = v.v
-	}
-	return &SampleSnapshot{
-		count:  s.count,
-		values: values,
-	}
-}
-
 // StdDev returns the standard deviation of the values in the sample.
 func (s *ExpDecaySample) StdDev() float64 {
 	return SampleStdDev(s.Values())
@@ -172,52 +157,9 @@ func (s *ExpDecaySample) update(t time.Time, v int64) {
 	}
 }
 
-// NilSample is a no-op Sample.
-type NilSample struct{}
-
-// Clear is a no-op.
-func (NilSample) Clear(time.Time) {}
-
-// Count is a no-op.
-func (NilSample) Count() int64 { return 0 }
-
-// Max is a no-op.
-func (NilSample) Max() int64 { return 0 }
-
-// Mean is a no-op.
-func (NilSample) Mean() float64 { return 0.0 }
-
-// Min is a no-op.
-func (NilSample) Min() int64 { return 0 }
-
-// Percentile is a no-op.
-func (NilSample) Percentile(p float64) float64 { return 0.0 }
-
-// Percentiles is a no-op.
-func (NilSample) Percentiles(ps []float64) []float64 {
-	return make([]float64, len(ps))
+func (s *ExpDecaySample) GetWindow() time.Duration {
+	return s.rescaleThreshold
 }
-
-// Size is a no-op.
-func (NilSample) Size() int { return 0 }
-
-// Sample is a no-op.
-func (NilSample) Snapshot() Sample { return NilSample{} }
-
-// StdDev is a no-op.
-func (NilSample) StdDev() float64 { return 0.0 }
-
-// Sum is a no-op.
-func (NilSample) Sum() int64 { return 0 }
-
-// Update is a no-op.
-func (NilSample) Update(t time.Time, v int64) {}
-
-// Values is a no-op.
-func (NilSample) Values() []int64 { return []int64{} }
-
-// Variance is a no-op.
-func (NilSample) Variance() float64 { return 0.0 }
 
 // SampleMax returns the maximum value of the slice of int64.
 func SampleMax(values []int64) int64 {
@@ -283,69 +225,6 @@ func SamplePercentiles(values int64Slice, ps []float64) []float64 {
 	return scores
 }
 
-// SampleSnapshot is a read-only copy of another Sample.
-type SampleSnapshot struct {
-	count  int64
-	values []int64
-}
-
-// Clear panics.
-func (*SampleSnapshot) Clear(time.Time) {
-	panic("Clear called on a SampleSnapshot")
-}
-
-// Count returns the count of inputs at the time the snapshot was taken.
-func (s *SampleSnapshot) Count() int64 { return s.count }
-
-// Max returns the maximal value at the time the snapshot was taken.
-func (s *SampleSnapshot) Max() int64 { return SampleMax(s.values) }
-
-// Mean returns the mean value at the time the snapshot was taken.
-func (s *SampleSnapshot) Mean() float64 { return SampleMean(s.values) }
-
-// Min returns the minimal value at the time the snapshot was taken.
-func (s *SampleSnapshot) Min() int64 { return SampleMin(s.values) }
-
-// Percentile returns an arbitrary percentile of values at the time the
-// snapshot was taken.
-func (s *SampleSnapshot) Percentile(p float64) float64 {
-	return SamplePercentile(s.values, p)
-}
-
-// Percentiles returns a slice of arbitrary percentiles of values at the time
-// the snapshot was taken.
-func (s *SampleSnapshot) Percentiles(ps []float64) []float64 {
-	return SamplePercentiles(s.values, ps)
-}
-
-// Size returns the size of the sample at the time the snapshot was taken.
-func (s *SampleSnapshot) Size() int { return len(s.values) }
-
-// Snapshot returns the snapshot.
-func (s *SampleSnapshot) Snapshot() Sample { return s }
-
-// StdDev returns the standard deviation of values at the time the snapshot was
-// taken.
-func (s *SampleSnapshot) StdDev() float64 { return SampleStdDev(s.values) }
-
-// Sum returns the sum of values at the time the snapshot was taken.
-func (s *SampleSnapshot) Sum() int64 { return SampleSum(s.values) }
-
-// Update panics.
-func (*SampleSnapshot) Update(time.Time, int64) {
-	panic("Update called on a SampleSnapshot")
-}
-
-// Values returns a copy of the values in the sample.
-func (s *SampleSnapshot) Values() []int64 {
-	values := make([]int64, len(s.values))
-	copy(values, s.values)
-	return values
-}
-
-// Variance returns the variance of values at the time the snapshot was taken.
-func (s *SampleSnapshot) Variance() float64 { return SampleVariance(s.values) }
-
 // SampleStdDev returns the standard deviation of the slice of int64.
 func SampleStdDev(values []int64) float64 {
 	return math.Sqrt(SampleVariance(values))
@@ -387,9 +266,6 @@ type UniformSample struct {
 // NewUniformSample constructs a new uniform sample with the given reservoir
 // size.
 func NewUniformSample(reservoirSize int) Sample {
-	if UseNilMetrics {
-		return NilSample{}
-	}
 	return &UniformSample{reservoirSize: reservoirSize}
 }
 
@@ -452,18 +328,6 @@ func (s *UniformSample) Size() int {
 	return len(s.values)
 }
 
-// Snapshot returns a read-only copy of the sample.
-func (s *UniformSample) Snapshot() Sample {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-	values := make([]int64, len(s.values))
-	copy(values, s.values)
-	return &SampleSnapshot{
-		count:  s.count,
-		values: values,
-	}
-}
-
 // StdDev returns the standard deviation of the values in the sample.
 func (s *UniformSample) StdDev() float64 {
 	s.mutex.Lock()
@@ -504,6 +368,10 @@ func (s *UniformSample) Variance() float64 {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	return SampleVariance(s.values)
+}
+
+func (s *UniformSample) GetWindow() time.Duration {
+	return 0
 }
 
 // expDecaySample represents an individual sample in a heap.

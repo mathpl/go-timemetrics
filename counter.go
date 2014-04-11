@@ -1,6 +1,7 @@
 package timemetrics
 
 import (
+	"fmt"
 	"sync/atomic"
 	"time"
 )
@@ -11,68 +12,17 @@ type Counter interface {
 	Count() int64
 	Dec(time.Time, int64)
 	Inc(time.Time, int64)
-	Snapshot() Counter
+	Update(time.Time, int64)
 	GetMaxTime() time.Time
+	GetKeys(time.Time, string) []string
+	NbKeys() int
+	Stale(time.Time) bool
 }
 
 // NewCounter constructs a new StandardCounter.
 func NewCounter(t time.Time) Counter {
-	if UseNilMetrics {
-		return NilCounter{}
-	}
 	return &StandardCounter{0, t}
 }
-
-// CounterSnapshot is a read-only copy of another Counter.
-type CounterSnapshot struct {
-	count      int64
-	lastUpdate time.Time
-}
-
-// Clear panics.
-func (CounterSnapshot) Clear(time.Time) {
-	panic("Clear called on a CounterSnapshot")
-}
-
-// Count returns the count at the time the snapshot was taken.
-func (c CounterSnapshot) Count() int64 { return int64(c.count) }
-
-// Dec panics.
-func (CounterSnapshot) Dec(time.Time, int64) {
-	panic("Dec called on a CounterSnapshot")
-}
-
-// Inc panics.
-func (CounterSnapshot) Inc(time.Time, int64) {
-	panic("Inc called on a CounterSnapshot")
-}
-
-func (c CounterSnapshot) GetMaxTime() time.Time {
-	return c.lastUpdate
-}
-
-// Snapshot returns the snapshot.
-func (c CounterSnapshot) Snapshot() Counter { return c }
-
-// NilCounter is a no-op Counter.
-type NilCounter struct{}
-
-// Clear is a no-op.
-func (NilCounter) Clear(time.Time) {}
-
-// Count is a no-op.
-func (NilCounter) Count() int64 { return 0 }
-
-// Dec is a no-op.
-func (NilCounter) Dec(t time.Time, i int64) {}
-
-// Inc is a no-op.
-func (NilCounter) Inc(t time.Time, i int64) {}
-
-// Snapshot is a no-op.
-func (NilCounter) Snapshot() Counter { return NilCounter{} }
-
-func (NilCounter) GetMaxTime() time.Time { return time.Now() }
 
 // StandardCounter is the standard implementation of a Counter and uses the
 // sync/atomic package to manage a single int64 value.
@@ -108,11 +58,27 @@ func (c *StandardCounter) Inc(t time.Time, i int64) {
 	}
 }
 
-// Snapshot returns a read-only copy of the counter.
-func (c *StandardCounter) Snapshot() Counter {
-	return CounterSnapshot{count: c.count, lastUpdate: c.lastUpdate}
+func (c *StandardCounter) Update(t time.Time, i int64) {
+	c.Inc(t, i)
 }
 
 func (c *StandardCounter) GetMaxTime() time.Time {
 	return c.lastUpdate
+}
+
+func (c *StandardCounter) GetKeys(ct time.Time, name string) []string {
+	t := int(c.GetMaxTime().Unix())
+
+	keys := make([]string, 1)
+	keys[0] = fmt.Sprintf(name, "count", t, fmt.Sprintf("%d", c.Count()))
+
+	return keys
+}
+
+func (c *StandardCounter) NbKeys() int {
+	return 1
+}
+
+func (c *StandardCounter) Stale(t time.Time) bool {
+	return t.Sub(c.GetMaxTime()) > time.Duration(15)*time.Minute
 }

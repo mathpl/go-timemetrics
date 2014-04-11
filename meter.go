@@ -1,6 +1,7 @@
 package timemetrics
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -15,6 +16,10 @@ type Meter interface {
 	Rate15() float64
 	GetMaxTime() time.Time
 	GetMaxEWMATime() time.Time
+	Update(time.Time, int64)
+	GetKeys(time.Time, string) []string
+	NbKeys() int
+	Stale(time.Time) bool
 }
 
 type timeValueTuple struct {
@@ -23,7 +28,7 @@ type timeValueTuple struct {
 }
 
 // NewMeter constructs a new StandardMeter and launches a goroutine.
-func NewMeter(t time.Time) Meter {
+func NewMeter(t time.Time, interval int) Meter {
 	m := &StandardMeter{
 		0,
 		NewEWMA1(t),
@@ -31,6 +36,7 @@ func NewMeter(t time.Time) Meter {
 		NewEWMA15(t),
 		t,
 		t,
+		interval,
 	}
 
 	return m
@@ -45,6 +51,7 @@ type StandardMeter struct {
 	a15            EWMA
 	lastUpdate     time.Time
 	lastEWMAUpdate time.Time
+	ewmaInterval   int
 }
 
 // Count returns the number of events recorded.
@@ -60,6 +67,10 @@ func (m *StandardMeter) Mark(t time.Time, n int64) {
 
 	m.count++
 	m.lastUpdate = t
+}
+
+func (m *StandardMeter) Update(t time.Time, i int64) {
+	m.Mark(t, i)
 }
 
 // Rate1 returns the one-minute moving average rate of events per minute.
@@ -93,50 +104,30 @@ func (m *StandardMeter) CrunchEWMA(t time.Time) {
 	m.lastEWMAUpdate = t
 }
 
-// arbiter receives inputs and sends outputs.  It counts each input and updates
-// the various moving averages and the mean rate of events.  It sends a copy of
-// the meterV as output.
-//func (m *StandardMeter) arbiter() {
-//	snapshot := &MeterSnapshot{}
-//	a1 := NewEWMA1(m.lastEWMAUpdate, m.interval)
-//	a5 := NewEWMA5(m.lastEWMAUpdate, m.interval)
-//	a15 := NewEWMA15(m.lastEWMAUpdate, m.interval)
+func (m *StandardMeter) GetKeys(ct time.Time, name string) []string {
+	t := int(m.GetMaxTime().Unix())
 
-//	for {
-//		select {
-//		case n := <-m.in:
-//			if n.t.After(m.lastUpdate) {
-//				m.lastUpdate = n.t
-//			}
+	var keys []string
+	if ct.Sub(m.GetMaxEWMATime()) > time.Duration(m.ewmaInterval)*time.Second {
+		m.CrunchEWMA(ct)
+		keys = make([]string, 4)
 
-//			if n.t.After(m.lastEWMAUpdate) {
-//				m.lastEWMAUpdate = n.t
-//			}
+		keys[1] = fmt.Sprintf(name, "rate._1min", t, fmt.Sprintf("%.4f", m.Rate1()))
+		keys[2] = fmt.Sprintf(name, "rate._5min", t, fmt.Sprintf("%.4f", m.Rate5()))
+		keys[3] = fmt.Sprintf(name, "rate._15min", t, fmt.Sprintf("%.4f", m.Rate15()))
+	} else {
+		keys = make([]string, 1)
+	}
 
-//			snapshot.count += n.v
-//			a1.Update(n.v)
-//			a5.Update(n.v)
-//			a15.Update(n.v)
-//			snapshot.rate1 = a1.Rate()
-//			snapshot.rate5 = a5.Rate()
-//			snapshot.rate15 = a15.Rate()
+	keys[0] = fmt.Sprintf(name, "count", t, fmt.Sprintf("%d", m.Count()))
 
-//			snapshot.lastUpdate = m.lastUpdate
-//			snapshot.lastEWMAUpdate = m.lastEWMAUpdate
-//		case m.out <- snapshot:
-//		case n := <-m.crunch:
-//			if n.t.After(m.lastEWMAUpdate) {
-//				m.lastEWMAUpdate = n.t
-//			}
+	return keys
+}
 
-//			a1.Tick(n.t)
-//			a5.Tick(n.t)
-//			a15.Tick(n.t)
-//			snapshot.rate1 = a1.Rate()
-//			snapshot.rate5 = a5.Rate()
-//			snapshot.rate15 = a15.Rate()
-//			snapshot.lastUpdate = m.lastUpdate
-//			snapshot.lastEWMAUpdate = m.lastEWMAUpdate
-//		}
-//	}
-//}
+func (m *StandardMeter) NbKeys() int {
+	return 4
+}
+
+func (m *StandardMeter) Stale(t time.Time) bool {
+	return t.Sub(m.GetMaxTime()) > time.Duration(15)*time.Minute
+}
