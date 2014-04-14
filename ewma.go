@@ -61,8 +61,9 @@ func (a *StandardEWMA) Tick(t time.Time) {
 		//Recalculate alpha
 		alpha := float64(1 - math.Exp(float64(-diff_time)/60.0/float64(a.over)))
 
-		//fmt.Printf("%d / %d / %d = %f\n", -diff_time, 60, a.over, float64(-diff_time)/60.0/float64(a.over))
-		//fmt.Printf("%f * (%f - %f) = %f\n", a.alpha, instantRate, a.rate, a.alpha*(instantRate-a.rate))
+		//fmt.Printf("instant: %f / %f = %f\n", float64(a.uncounted), float64(diff_time*1e9), float64(a.uncounted)/float64(diff_time*1e9))
+		//fmt.Printf("alpha: (1 - Exp(%f / 60 / %f) ) = %f\n", float64(-diff_time), float64(a.over), float64(1-math.Exp(float64(-diff_time)/60.0/float64(a.over))))
+		//fmt.Printf("rate: %f * (%f - %f)  =  %f\n", alpha, instantRate, a.rate, alpha*(instantRate-a.rate))
 		if a.init {
 			a.rate += alpha * (instantRate - a.rate)
 		} else {

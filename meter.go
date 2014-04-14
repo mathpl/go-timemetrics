@@ -111,6 +111,8 @@ func (m *StandardMeter) GetKeys(ct time.Time, name string) []string {
 
 	var keys []string
 	if ct.Sub(m.GetMaxEWMATime()) > time.Duration(m.ewmaInterval)*time.Second {
+		//fmt.Printf("%s - %s = %s\n", ct, m.GetMaxEWMATime(), nct.Sub(m.GetMaxEWMATime()))
+		//fmt.Printf("CRUNCH TIME: %s > %s\n", ct, time.Duration(m.ewmaInterval))
 		m.CrunchEWMA(ct)
 		keys = make([]string, 4)
 
