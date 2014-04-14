@@ -28,7 +28,7 @@ type timeValueTuple struct {
 }
 
 // NewMeter constructs a new StandardMeter and launches a goroutine.
-func NewMeter(t time.Time, interval int) Meter {
+func NewMeter(t time.Time, interval int, staleThreshold int) Meter {
 	m := &StandardMeter{
 		0,
 		NewEWMA1(t),
@@ -37,6 +37,7 @@ func NewMeter(t time.Time, interval int) Meter {
 		t,
 		t,
 		interval,
+		staleThreshold,
 	}
 
 	return m
@@ -52,6 +53,7 @@ type StandardMeter struct {
 	lastUpdate     time.Time
 	lastEWMAUpdate time.Time
 	ewmaInterval   int
+	staleThreshold int
 }
 
 // Count returns the number of events recorded.
@@ -129,5 +131,5 @@ func (m *StandardMeter) NbKeys() int {
 }
 
 func (m *StandardMeter) Stale(t time.Time) bool {
-	return t.Sub(m.GetMaxTime()) > time.Duration(15)*time.Minute
+	return t.Sub(m.GetMaxTime()) > time.Duration(m.staleThreshold)*time.Minute
 }

@@ -20,15 +20,16 @@ type Counter interface {
 }
 
 // NewCounter constructs a new StandardCounter.
-func NewCounter(t time.Time) Counter {
-	return &StandardCounter{0, t}
+func NewCounter(t time.Time, staleThreshold int) Counter {
+	return &StandardCounter{0, t, staleThreshold}
 }
 
 // StandardCounter is the standard implementation of a Counter and uses the
 // sync/atomic package to manage a single int64 value.
 type StandardCounter struct {
-	count      int64
-	lastUpdate time.Time
+	count          int64
+	lastUpdate     time.Time
+	staleThreshold int
 }
 
 // Clear sets the counter to zero.
@@ -80,5 +81,5 @@ func (c *StandardCounter) NbKeys() int {
 }
 
 func (c *StandardCounter) Stale(t time.Time) bool {
-	return t.Sub(c.GetMaxTime()) > time.Duration(15)*time.Minute
+	return t.Sub(c.GetMaxTime()) > time.Duration(c.staleThreshold)*time.Minute
 }

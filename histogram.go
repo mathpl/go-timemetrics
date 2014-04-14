@@ -27,13 +27,14 @@ type Histogram interface {
 // StandardHistogram is the standard implementation of a Histogram and uses a
 // Sample to bound its memory use.
 type StandardHistogram struct {
-	sample     Sample
-	lastUpdate time.Time
+	sample         Sample
+	lastUpdate     time.Time
+	staleThreshold int
 }
 
 // NewHistogram constructs a new StandardHistogram from a Sample.
-func NewHistogram(s Sample) Histogram {
-	return &StandardHistogram{sample: s}
+func NewHistogram(s Sample, staleThreshold int) Histogram {
+	return &StandardHistogram{sample: s, staleThreshold: staleThreshold}
 }
 
 // Clear clears the histogram and its sample.
@@ -107,5 +108,5 @@ func (h *StandardHistogram) NbKeys() int {
 }
 
 func (h *StandardHistogram) Stale(t time.Time) bool {
-	return t.Sub(h.GetMaxTime()) > h.sample.GetWindow()
+	return t.Sub(h.GetMaxTime()) > time.Duration(h.staleThreshold)*time.Minute
 }
