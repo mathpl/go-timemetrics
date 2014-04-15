@@ -20,6 +20,7 @@ type Meter interface {
 	GetKeys(time.Time, string) []string
 	NbKeys() int
 	Stale(time.Time) bool
+	PushKeysTime(t time.Time) bool
 }
 
 type timeValueTuple struct {
@@ -110,8 +111,8 @@ func (m *StandardMeter) GetKeys(ct time.Time, name string) []string {
 	t := int(m.GetMaxTime().Unix())
 
 	var keys []string
-	if ct.Sub(m.GetMaxEWMATime()) > time.Duration(m.ewmaInterval)*time.Second {
-		//fmt.Printf("%s - %s = %s\n", ct, m.GetMaxEWMATime(), nct.Sub(m.GetMaxEWMATime()))
+	if ct.Sub(m.lastEWMAUpdate) >= time.Duration(m.ewmaInterval)*time.Second {
+		//fmt.Printf("%s - %s = %s > %s\n", ct, m.GetMaxEWMATime(), ct.Sub(m.GetMaxEWMATime()), time.Duration(m.ewmaInterval)*time.Second)
 		//fmt.Printf("CRUNCH TIME: %s > %s\n", ct, time.Duration(m.ewmaInterval))
 		m.CrunchEWMA(ct)
 		keys = make([]string, 4)
@@ -134,4 +135,8 @@ func (m *StandardMeter) NbKeys() int {
 
 func (m *StandardMeter) Stale(t time.Time) bool {
 	return t.Sub(m.GetMaxTime()) > time.Duration(m.staleThreshold)*time.Minute
+}
+
+func (m *StandardMeter) PushKeysTime(t time.Time) bool {
+	return m.lastUpdate.After(t) || m.lastUpdate.Equal(t) || t.Sub(m.lastEWMAUpdate) > time.Duration(m.ewmaInterval)*time.Second
 }

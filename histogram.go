@@ -22,6 +22,7 @@ type Histogram interface {
 	GetKeys(time.Time, string) []string
 	NbKeys() int
 	Stale(time.Time) bool
+	PushKeysTime(time.Time) bool
 }
 
 // StandardHistogram is the standard implementation of a Histogram and uses a
@@ -109,4 +110,8 @@ func (h *StandardHistogram) NbKeys() int {
 
 func (h *StandardHistogram) Stale(t time.Time) bool {
 	return t.Sub(h.GetMaxTime()) > time.Duration(h.staleThreshold)*time.Minute
+}
+
+func (h *StandardHistogram) PushKeysTime(t time.Time) bool {
+	return h.lastUpdate.After(t) || h.lastUpdate.Equal(t)
 }
