@@ -86,5 +86,5 @@ func (c *StandardCounter) Stale(t time.Time) bool {
 }
 
 func (c *StandardCounter) PushKeysTime(t time.Time) bool {
-	return c.lastUpdate.After(t) || c.lastUpdate.Equal(t)
+	return c.lastUpdate.After(t)
 }

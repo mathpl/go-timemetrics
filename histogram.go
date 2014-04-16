@@ -113,5 +113,5 @@ func (h *StandardHistogram) Stale(t time.Time) bool {
 }
 
 func (h *StandardHistogram) PushKeysTime(t time.Time) bool {
-	return h.lastUpdate.After(t) || h.lastUpdate.Equal(t)
+	return h.lastUpdate.After(t)
 }

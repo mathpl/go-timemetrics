@@ -138,5 +138,5 @@ func (m *StandardMeter) Stale(t time.Time) bool {
 }
 
 func (m *StandardMeter) PushKeysTime(t time.Time) bool {
-	return m.lastUpdate.After(t) || m.lastUpdate.Equal(t) || t.Sub(m.lastEWMAUpdate) > time.Duration(m.ewmaInterval)*time.Second
+	return m.lastUpdate.After(t) || t.Sub(m.lastEWMAUpdate) > time.Duration(m.ewmaInterval)*time.Second
 }
