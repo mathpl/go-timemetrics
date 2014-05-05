@@ -27,6 +27,7 @@ type Sample interface {
 	Values() []int64
 	Variance() float64
 	GetWindow() time.Duration
+	ZeroOut()
 }
 
 // ExpDecaySample is an exponentially-decaying sample using a forward-decaying
@@ -159,6 +160,10 @@ func (s *ExpDecaySample) update(t time.Time, v int64) {
 
 func (s *ExpDecaySample) GetWindow() time.Duration {
 	return s.rescaleThreshold
+}
+
+func (s *ExpDecaySample) ZeroOut() {
+	s.values = make(expDecaySampleHeap, 0, 1)
 }
 
 // SampleMax returns the maximum value of the slice of int64.
@@ -372,6 +377,10 @@ func (s *UniformSample) Variance() float64 {
 
 func (s *UniformSample) GetWindow() time.Duration {
 	return 0
+}
+
+func (s *UniformSample) ZeroOut() {
+	s.values = make([]int64, 1)
 }
 
 // expDecaySample represents an individual sample in a heap.

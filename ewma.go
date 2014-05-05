@@ -12,6 +12,7 @@ type EWMA interface {
 	Rate() float64
 	Tick(time.Time)
 	Update(int64)
+	ZeroOut()
 }
 
 // NewEWMA constructs a new EWMA with the given alpha.
@@ -80,4 +81,8 @@ func (a *StandardEWMA) Tick(t time.Time) {
 // Update adds n uncounted events.
 func (a *StandardEWMA) Update(n int64) {
 	a.uncounted += n
+}
+
+func (a *StandardEWMA) ZeroOut() {
+	a.rate = 0
 }

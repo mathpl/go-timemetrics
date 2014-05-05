@@ -21,6 +21,7 @@ type Meter interface {
 	NbKeys() int
 	Stale(time.Time) bool
 	PushKeysTime(t time.Time) bool
+	ZeroOut()
 }
 
 type timeValueTuple struct {
@@ -139,4 +140,10 @@ func (m *StandardMeter) Stale(t time.Time) bool {
 
 func (m *StandardMeter) PushKeysTime(t time.Time) bool {
 	return m.lastUpdate.After(t) || t.Sub(m.lastEWMAUpdate) > time.Duration(m.ewmaInterval)*time.Second
+}
+
+func (m *StandardMeter) ZeroOut() {
+	m.a1.ZeroOut()
+	m.a5.ZeroOut()
+	m.a15.ZeroOut()
 }

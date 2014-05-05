@@ -11,4 +11,5 @@ type Metric interface {
 	NbKeys() int
 	PushKeysTime(time.Time) bool
 	Stale(time.Time) bool
+	ZeroOut()
 }

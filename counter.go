@@ -18,6 +18,7 @@ type Counter interface {
 	NbKeys() int
 	Stale(time.Time) bool
 	PushKeysTime(time.Time) bool
+	ZeroOut()
 }
 
 // NewCounter constructs a new StandardCounter.
@@ -87,4 +88,9 @@ func (c *StandardCounter) Stale(t time.Time) bool {
 
 func (c *StandardCounter) PushKeysTime(t time.Time) bool {
 	return c.lastUpdate.After(t)
+}
+
+func (c *StandardCounter) ZeroOut() {
+	//Nothing to do for counters
+	return
 }
