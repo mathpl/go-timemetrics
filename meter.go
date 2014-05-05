@@ -148,6 +148,9 @@ func (m *StandardMeter) PushKeysTime(t time.Time) bool {
 }
 
 func (m *StandardMeter) ZeroOut() {
+	//Force next EWMA push
+	m.lastEWMAUpdate = time.Unix(0, 0)
+
 	m.a1.ZeroOut()
 	m.a5.ZeroOut()
 	m.a15.ZeroOut()
