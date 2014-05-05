@@ -19,7 +19,7 @@ type Histogram interface {
 	Update(time.Time, int64)
 	Variance() float64
 	GetMaxTime() time.Time
-	GetKeys(time.Time, string) []string
+	GetKeys(time.Time, string, bool) []string
 	NbKeys() int
 	Stale(time.Time) bool
 	PushKeysTime(time.Time) bool
@@ -85,8 +85,13 @@ func (h *StandardHistogram) Variance() float64 { return h.sample.Variance() }
 
 func (h *StandardHistogram) GetMaxTime() time.Time { return h.lastUpdate }
 
-func (h *StandardHistogram) GetKeys(ct time.Time, name string) []string {
-	t := int(h.GetMaxTime().Unix())
+func (h *StandardHistogram) GetKeys(ct time.Time, name string, currentTime bool) []string {
+	var t int64
+	if currentTime {
+		t = ct.Unix()
+	} else {
+		t = h.GetMaxTime().Unix()
+	}
 	ps := h.Percentiles([]float64{0.5, 0.75, 0.95, 0.99, 0.999})
 
 	keys := make([]string, 10)

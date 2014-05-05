@@ -17,7 +17,7 @@ type Meter interface {
 	GetMaxTime() time.Time
 	GetMaxEWMATime() time.Time
 	Update(time.Time, int64)
-	GetKeys(time.Time, string) []string
+	GetKeys(time.Time, string, bool) []string
 	NbKeys() int
 	Stale(time.Time) bool
 	PushKeysTime(t time.Time) bool
@@ -108,8 +108,13 @@ func (m *StandardMeter) CrunchEWMA(t time.Time) {
 	m.lastEWMAUpdate = t
 }
 
-func (m *StandardMeter) GetKeys(ct time.Time, name string) []string {
-	t := int(m.GetMaxTime().Unix())
+func (m *StandardMeter) GetKeys(ct time.Time, name string, currentTime bool) []string {
+	var t int64
+	if currentTime {
+		t = ct.Unix()
+	} else {
+		t = m.GetMaxTime().Unix()
+	}
 
 	var keys []string
 	if ct.Sub(m.lastEWMAUpdate) >= time.Duration(m.ewmaInterval)*time.Second {

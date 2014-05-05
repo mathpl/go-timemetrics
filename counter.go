@@ -14,7 +14,7 @@ type Counter interface {
 	Inc(time.Time, int64)
 	Update(time.Time, int64)
 	GetMaxTime() time.Time
-	GetKeys(time.Time, string) []string
+	GetKeys(time.Time, string, bool) []string
 	NbKeys() int
 	Stale(time.Time) bool
 	PushKeysTime(time.Time) bool
@@ -69,8 +69,13 @@ func (c *StandardCounter) GetMaxTime() time.Time {
 	return c.lastUpdate
 }
 
-func (c *StandardCounter) GetKeys(ct time.Time, name string) []string {
-	t := int(c.GetMaxTime().Unix())
+func (c *StandardCounter) GetKeys(ct time.Time, name string, currentTime bool) []string {
+	var t int64
+	if currentTime {
+		t = ct.Unix()
+	} else {
+		t = c.GetMaxTime().Unix()
+	}
 
 	keys := make([]string, 1)
 	keys[0] = fmt.Sprintf(name, "count", t, fmt.Sprintf("%d", c.Count()))

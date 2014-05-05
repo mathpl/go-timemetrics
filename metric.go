@@ -6,7 +6,7 @@ import (
 
 type Metric interface {
 	Update(time.Time, int64)
-	GetKeys(time.Time, string) []string
+	GetKeys(time.Time, string, bool) []string
 	GetMaxTime() time.Time
 	NbKeys() int
 	PushKeysTime(time.Time) bool
