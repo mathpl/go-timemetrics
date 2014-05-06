@@ -69,7 +69,7 @@ func (m *StandardMeter) Mark(t time.Time, n int64) {
 	m.a5.Update(n)
 	m.a15.Update(n)
 
-	m.count++
+	m.count += n
 	m.lastUpdate = t
 }
 
