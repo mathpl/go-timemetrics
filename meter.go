@@ -140,6 +140,7 @@ func (m *StandardMeter) NbKeys() int {
 }
 
 func (m *StandardMeter) Stale(t time.Time) bool {
+	//fmt.Printf("cur diff: %s vs max diff: %s", t.Sub(m.GetMaxTime()), time.Duration(m.staleThreshold)*time.Minute)
 	return t.Sub(m.GetMaxTime()) > time.Duration(m.staleThreshold)*time.Minute
 }
 
