@@ -123,9 +123,9 @@ func (m *StandardMeter) GetKeys(ct time.Time, name string, currentTime bool) []s
 		m.CrunchEWMA(ct)
 		keys = make([]string, 4)
 
-		keys[1] = fmt.Sprintf(name, "rate._1min", t, fmt.Sprintf("%.4f", m.Rate1()))
-		keys[2] = fmt.Sprintf(name, "rate._5min", t, fmt.Sprintf("%.4f", m.Rate5()))
-		keys[3] = fmt.Sprintf(name, "rate._15min", t, fmt.Sprintf("%.4f", m.Rate15()))
+		keys[1] = fmt.Sprintf(name, "rate._1min", t, fmt.Sprintf("%.6f", m.Rate1()))
+		keys[2] = fmt.Sprintf(name, "rate._5min", t, fmt.Sprintf("%.6f", m.Rate5()))
+		keys[3] = fmt.Sprintf(name, "rate._15min", t, fmt.Sprintf("%.6f", m.Rate15()))
 	} else {
 		keys = make([]string, 1)
 	}
@@ -140,6 +140,7 @@ func (m *StandardMeter) NbKeys() int {
 }
 
 func (m *StandardMeter) Stale(t time.Time) bool {
+	//fmt.Printf("cur diff: %s vs max diff: %s", t.Sub(m.GetMaxTime()), time.Duration(m.staleThreshold)*time.Minute)
 	return t.Sub(m.GetMaxTime()) > time.Duration(m.staleThreshold)*time.Minute
 }
 

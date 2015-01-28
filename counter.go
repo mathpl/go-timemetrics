@@ -88,7 +88,8 @@ func (c *StandardCounter) NbKeys() int {
 }
 
 func (c *StandardCounter) Stale(t time.Time) bool {
-	return t.Sub(c.GetMaxTime()) > time.Duration(c.staleThreshold)*time.Minute
+	//return t.Sub(c.GetMaxTime()) > time.Duration(c.staleThreshold)*time.Minute
+	return false
 }
 
 func (c *StandardCounter) PushKeysTime(t time.Time) bool {
